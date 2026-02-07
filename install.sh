@@ -1,5 +1,5 @@
 #!/bin/bash
-# MQTT Doorbell Listener - Installer
+# MQTT Doorbell Notifier - Installer
 
 set -e
 
@@ -8,34 +8,31 @@ INSTALL_DIR="$HOME/.local/bin"
 SERVICE_DIR="$HOME/.config/systemd/user"
 SERVICE_NAME="doorbell-notifier.service"
 
-echo "MQTT Doorbell Listener - Installer"
-echo "==================================="
+echo "MQTT Doorbell Notifier - Installer"
+echo "=================================="
 echo ""
+
+# Check for a single dependency
+# Usage: check_dependency "command_name" "package_name"
+check_dependency() {
+  local cmd=$1
+  local pkg=$2
+
+  if ! command -v "$cmd" &> /dev/null; then
+    MISSING_DEPS+=("$cmd")
+    MISSING_PACKAGES+=("$pkg")
+  fi
+}
 
 # Check dependencies
 echo "Checking dependencies..."
 MISSING_DEPS=()
 MISSING_PACKAGES=()
 
-if ! command -v mosquitto_sub &> /dev/null; then
-  MISSING_DEPS+=("mosquitto_sub")
-  MISSING_PACKAGES+=("mosquitto-clients")
-fi
-
-if ! command -v secret-tool &> /dev/null; then
-  MISSING_DEPS+=("secret-tool")
-  MISSING_PACKAGES+=("libsecret-tools")
-fi
-
-if ! command -v notify-send &> /dev/null; then
-  MISSING_DEPS+=("notify-send")
-  MISSING_PACKAGES+=("libnotify-bin")
-fi
-
-if ! command -v canberra-gtk-play &> /dev/null; then
-  MISSING_DEPS+=("canberra-gtk-play")
-  MISSING_PACKAGES+=("gnome-session-canberra")
-fi
+check_dependency "mosquitto_sub" "mosquitto-clients"
+check_dependency "secret-tool" "libsecret-tools"
+check_dependency "notify-send" "libnotify-bin"
+check_dependency "canberra-gtk-play" "gnome-session-canberra"
 
 if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
   {
