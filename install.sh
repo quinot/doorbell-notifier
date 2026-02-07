@@ -34,7 +34,7 @@ fi
 
 if ! command -v canberra-gtk-play &> /dev/null; then
   MISSING_DEPS+=("canberra-gtk-play")
-  MISSING_PACKAGES+=("libcanberra-gtk3-module")
+  MISSING_PACKAGES+=("gnome-session-canberra")
 fi
 
 if [ ${#MISSING_DEPS[@]} -gt 0 ]; then

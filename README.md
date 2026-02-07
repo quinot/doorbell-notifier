@@ -21,13 +21,13 @@ A desktop notification service that listens to MQTT topics and displays notifica
 
 The following packages are required:
 ```bash
-sudo apt install mosquitto-clients libsecret-tools libcanberra-gtk3-module libnotify-bin
+sudo apt install mosquitto-clients libsecret-tools gnome-session-canberra libnotify-bin
 ```
 
 **Package details:**
 - `mosquitto-clients` - MQTT client tools
 - `libsecret-tools` - Keyring access for secure credential storage
-- `libcanberra-gtk3-module` - System sound support
+- `gnome-session-canberra` - System sound support
 - `libnotify-bin` - Desktop notification support
 
 ## Installation
