@@ -112,7 +112,7 @@ EOF
 # View current configuration
 view_config() {
   echo "Current MQTT Doorbell Configuration"
-  echo "===================================="
+  echo "==================================="
   echo ""
 
   local has_config=0
