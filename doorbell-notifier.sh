@@ -243,7 +243,7 @@ run_notifier() {
   fi
 
   # Build mosquitto_sub command with optional client ID
-  MOSQUITTO_CMD="mosquitto_sub -L \"${MQTT_URL}\" -t \"${MQTT_TOPIC}\" -u \"${MQTT_USER}\" -P \"${MQTT_PASS}\" -k 60"
+  MOSQUITTO_CMD="mosquitto_sub -L \"${MQTT_URL}/${MQTT_TOPIC}\" -u \"${MQTT_USER}\" -P \"${MQTT_PASS}\" -k 60"
   if [ -n "$MQTT_CLIENT_ID" ]; then
     MOSQUITTO_CMD="$MOSQUITTO_CMD -i \"${MQTT_CLIENT_ID}\""
   fi
