@@ -62,22 +62,25 @@ prompt_config() {
   local prompt_text=$2
   local is_password=$3
   local current_value
+  local value
 
   current_value=$(get_config "$field")
 
+  # Display current value to stderr so it doesn't get captured
   if [ -n "$current_value" ] && [ "$is_password" != "1" ]; then
-    echo "Current value: $current_value"
+    echo "Current value: $current_value" >&2
   elif [ -n "$current_value" ] && [ "$is_password" = "1" ]; then
-    echo "Current value: (hidden)"
+    echo "Current value: (hidden)" >&2
   fi
 
   if [ "$is_password" = "1" ]; then
-    read -sp "$prompt_text: " value
-    echo ""
+    read -sp "$prompt_text: " value >&2
+    echo "" >&2
   else
-    read -p "$prompt_text: " value
+    read -p "$prompt_text: " value >&2
   fi
 
+  # Output only the value to stdout
   echo "$value"
 }
 
