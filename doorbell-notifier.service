@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/doorbell-notifier.sh
+ExecStart=%h/.local/bin/doorbell-notifier
 Restart=always
 RestartSec=5
 

@@ -1,12 +1,10 @@
 #!/bin/bash
-# MQTT Doorbell Listener - Uninstaller
+# MQTT Doorbell Notifier - Uninstaller
 
-SCRIPT_NAME="doorbell-notifier.sh"
-INSTALL_DIR="$HOME/.local/bin"
 SERVICE_DIR="$HOME/.config/systemd/user"
 SERVICE_NAME="doorbell-notifier.service"
 
-echo "MQTT Doorbell Listener - Uninstaller"
+echo "MQTT Doorbell Notifier - Uninstaller"
 echo "====================================="
 echo ""
 
@@ -22,27 +20,24 @@ if systemctl --user is-enabled --quiet $SERVICE_NAME 2>/dev/null; then
   systemctl --user disable $SERVICE_NAME
 fi
 
-# Remove files
-echo "Removing files..."
-rm -f "$INSTALL_DIR/$SCRIPT_NAME"
+# Remove service file
+echo "Removing service file..."
 rm -f "$SERVICE_DIR/$SERVICE_NAME"
 
 # Reload systemd
 systemctl --user daemon-reload
+
+# Uninstall via pipx
+echo "Uninstalling doorbell-notifier via pipx..."
+pipx uninstall doorbell-notifier
 
 echo ""
 echo "╔════════════════════════════════════════════════════════╗"
 echo "║        Uninstallation completed successfully!         ║"
 echo "╚════════════════════════════════════════════════════════╝"
 echo ""
-echo "Note: Configuration stored in keyring was NOT removed."
+echo "Note: Configuration file was NOT removed."
 echo ""
-echo "To remove MQTT configuration from keyring:"
-echo "  $ secret-tool clear service mqtt field url"
-echo "  $ secret-tool clear service mqtt field topic"
-echo "  $ secret-tool clear service mqtt field username"
-echo "  $ secret-tool clear service mqtt field password"
-echo "  $ secret-tool clear service mqtt field clientid"
-echo ""
-echo "Or use the GUI: Passwords and Keys (Seahorse)"
+echo "To remove configuration:"
+echo "  $ rm -rf ~/.config/doorbell-notifier"
 echo ""

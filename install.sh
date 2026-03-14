@@ -3,8 +3,6 @@
 
 set -e
 
-SCRIPT_NAME="doorbell-notifier.sh"
-INSTALL_DIR="$HOME/.local/bin"
 SERVICE_DIR="$HOME/.config/systemd/user"
 SERVICE_NAME="doorbell-notifier.service"
 
@@ -24,15 +22,36 @@ check_dependency() {
   fi
 }
 
+# Check for a Python GI package (by trying to import it)
+# Usage: check_gi_package "gi_module" "package_name"
+check_gi_package() {
+  local module=$1
+  local pkg=$2
+
+  if ! python3 -c "import $module" &> /dev/null; then
+    MISSING_DEPS+=("$module")
+    MISSING_PACKAGES+=("$pkg")
+  fi
+}
+
 # Check dependencies
 echo "Checking dependencies..."
 MISSING_DEPS=()
 MISSING_PACKAGES=()
 
-check_dependency "mosquitto_sub" "mosquitto-clients"
-check_dependency "secret-tool" "libsecret-tools"
-check_dependency "notify-send" "libnotify-bin"
-check_dependency "canberra-gtk-play" "gnome-session-canberra"
+check_dependency "pipx" "pipx"
+check_gi_package "gi" "python3-gi"
+
+# Check GI typelibs by trying to require them
+if ! python3 -c "import gi; gi.require_version('Notify','0.7'); from gi.repository import Notify" &> /dev/null; then
+  MISSING_DEPS+=("gir1.2-notify-0.7")
+  MISSING_PACKAGES+=("gir1.2-notify-0.7")
+fi
+
+if ! python3 -c "import gi; gi.require_version('GSound','1.0'); from gi.repository import GSound" &> /dev/null; then
+  MISSING_DEPS+=("gir1.2-gsound-1.0")
+  MISSING_PACKAGES+=("gir1.2-gsound-1.0")
+fi
 
 if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
   {
@@ -49,20 +68,9 @@ fi
 echo "All dependencies found."
 echo ""
 
-# Check if script exists
-if [ ! -f "$SCRIPT_NAME" ]; then
-  {
-    echo "Error: $SCRIPT_NAME not found in current directory."
-    echo "Please run this installer from the repository directory."
-  } >&2
-  exit 1
-fi
-
-# Install script
-echo "Installing script to $INSTALL_DIR..."
-mkdir -p "$INSTALL_DIR"
-cp "$SCRIPT_NAME" "$INSTALL_DIR/"
-chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
+# Install via pipx
+echo "Installing doorbell-notifier via pipx..."
+pipx install --system-site-packages .
 
 # Check if ~/.local/bin is in PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
@@ -90,7 +98,7 @@ echo ""
 echo "Next steps:"
 echo ""
 echo "  1. Configure MQTT settings:"
-echo "     $ $SCRIPT_NAME -c"
+echo "     $ doorbell-notifier -c"
 echo ""
 echo "  2. Enable the service to start on login:"
 echo "     $ systemctl --user enable $SERVICE_NAME"
