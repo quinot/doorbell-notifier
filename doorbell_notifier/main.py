@@ -29,8 +29,19 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, "config.yaml")
 
 logger = logging.getLogger("doorbell")
 
-_notify_initialized = False
+# GSound context is cached for the process lifetime. Although play_simple() is
+# documented as synchronous/blocking, the context must remain alive after the
+# call returns — destroying it immediately causes silent playback failures,
+# suggesting GSound still needs the context for event loop dispatch after
+# play_simple() returns.
 _gsound_ctx = None
+
+
+def _get_gsound_ctx():
+    global _gsound_ctx
+    if _gsound_ctx is None and _GI_AVAILABLE:
+        _gsound_ctx = GSound.Context.new()
+    return _gsound_ctx
 
 
 def get_config_path():
@@ -172,19 +183,6 @@ def _resolve_icon_or_sound(value):
     return False, value
 
 
-def _ensure_notify_init():
-    global _notify_initialized
-    if not _notify_initialized and _GI_AVAILABLE:
-        Notify.init("doorbell-notifier")
-        _notify_initialized = True
-
-
-def _get_gsound_ctx():
-    global _gsound_ctx
-    if _gsound_ctx is None and _GI_AVAILABLE:
-        _gsound_ctx = GSound.Context.new()
-    return _gsound_ctx
-
 
 def handle_message(payload_json, config):
     try:
@@ -218,33 +216,24 @@ def handle_message(payload_json, config):
     logger.info("Doorbell event: type=%s message=%s", msg_type, message)
 
     if _GI_AVAILABLE:
-        _ensure_notify_init()
-
         # Desktop notification
+        Notify.init("doorbell-notifier")
         icon_is_file, icon_resolved = _resolve_icon_or_sound(icon) if icon else (False, None)
         n = Notify.Notification.new("Doorbell", message, icon_resolved)
         n.set_urgency(Notify.Urgency.CRITICAL)
-        try:
-            n.show()
-        except Exception:
-            # Notification daemon may have restarted; reinitialise and retry once
-            global _notify_initialized
-            _notify_initialized = False
-            _ensure_notify_init()
-            n.show()
+        n.show()
 
         # Sound
         if sound:
             ctx = _get_gsound_ctx()
-            if ctx:
-                sound_is_file, sound_resolved = _resolve_icon_or_sound(sound)
-                try:
-                    if sound_is_file:
-                        ctx.play_simple({GSound.ATTR_MEDIA_FILENAME: sound_resolved}, None)
-                    else:
-                        ctx.play_simple({GSound.ATTR_EVENT_ID: sound_resolved}, None)
-                except Exception as e:
-                    logger.warning("Failed to play sound %r: %s", sound_resolved, e)
+            sound_is_file, sound_resolved = _resolve_icon_or_sound(sound)
+            try:
+                if sound_is_file:
+                    ctx.play_simple({GSound.ATTR_MEDIA_FILENAME: sound_resolved}, None)
+                else:
+                    ctx.play_simple({GSound.ATTR_EVENT_ID: sound_resolved}, None)
+            except Exception as e:
+                logger.warning("Failed to play sound %r: %s", sound_resolved, e)
     else:
         logger.warning("GObject introspection not available; skipping notification display")
 
