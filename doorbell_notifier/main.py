@@ -29,9 +29,10 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, "config.yaml")
 
 logger = logging.getLogger("doorbell")
 
-# GSound context is cached for the process lifetime. Although play_simple() is
-# documented as synchronous/blocking, the context must remain alive after the
-# call returns — destroying it immediately causes silent playback failures,
+# GSound context is kept global (so that it's not garbage collected right
+# after each notification) because although play_simple() is documented as
+# synchronous/blocking, the context must remain alive after the call
+# returns — destroying it immediately causes silent playback failures,
 # suggesting GSound still needs the context for event loop dispatch after
 # play_simple() returns.
 _gsound_ctx = None
@@ -39,7 +40,8 @@ _gsound_ctx = None
 
 def _get_gsound_ctx():
     global _gsound_ctx
-    if _gsound_ctx is None and _GI_AVAILABLE:
+    _gsound_ctx = None
+    if _GI_AVAILABLE:
         _gsound_ctx = GSound.Context.new()
     return _gsound_ctx
 
@@ -217,6 +219,10 @@ def handle_message(payload_json, config):
 
     if _GI_AVAILABLE:
         # Desktop notification
+        # Reinitialize on every notification to avoid stale D-Bus connections
+        # after suspend/resume (the notification daemon may have a new bus name).
+        if Notify.is_initted():
+            Notify.uninit()
         Notify.init("doorbell-notifier")
         icon_is_file, icon_resolved = _resolve_icon_or_sound(icon) if icon else (False, None)
         n = Notify.Notification.new("Doorbell", message, icon_resolved)
